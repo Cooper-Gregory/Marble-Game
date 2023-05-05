@@ -3,131 +3,172 @@ using System.Collections;
 
 public class Player : MonoBehaviour {
 
-	public bool DebugOn;
+    public bool DebugOn;
 
-	public float GroundProximityTolerence;
-	public float TestRadius;
+    public float GroundProximityTolerence;
+    public float TestRadius;
 
-	public float RollForce;
-	public float JumpForce;
-	public float TweakValue;
+    public float RollForce;
+    public float JumpForce;
+    public float TweakValue;
 
-	public GameObject MainCam;
-	public GameObject CamOrbit;
-	public GameObject CameraRestingPos;
-	public GameObject CameraResetPosition;
+    public GameObject MainCam;
+    public GameObject CamOrbit;
+    public GameObject CameraRestingPos;
+    public GameObject CameraResetPosition;
 
-	public Vector3 CamOffset;
-	public float CamAngle;
-	public float MouseSensitivity;
+    public Vector3 CamOffset;
+    public float CamAngle;
+    public float MouseSensitivity;
 
-	private Rigidbody rb;
-	private bool grounded;
-	private float HorizontlComponent;
-	private float VerticalComponent;
-	private Vector3 MovementVector;
-	private float OrbitAngle;
+    private Rigidbody rb;
+    private bool grounded;
+    private float HorizontlComponent;
+    private float VerticalComponent;
+    private Vector3 MovementVector;
+    private float OrbitAngle;
 
-	private bool CameraCollision;
+    private bool CameraCollision;
 
-	private GameObject gc;
+    private GameObject gc;
 
-	[HideInInspector] public Vector3 ResetPosition;
-	[HideInInspector] public Quaternion ResetRotation; // not actually used yet
+    public bool useSeeThrough;
+    private GameObject objectHit;
 
-	void Start ()
-	{
-		DebugOn = true;
+    public Material defaultMaterial;
+    public Material hitMaterial;
+    public Material previousMaterial;
 
-		rb = GetComponent<Rigidbody> ();
-		gc = GameObject.FindGameObjectWithTag ("GameController");
-		ResetPosition = gc.GetComponent<GameController> ().LevelStart.transform.position + gc.GetComponent<GameController> ().StartOffset;
+    [HideInInspector] public Vector3 ResetPosition;
+    [HideInInspector] public Quaternion ResetRotation; // not actually used yet
 
-		ResetRotation = Quaternion.identity; // because I'm lazy... eventually change this to the orientation of the start object
-	}
+    void Start()
+    {
+        DebugOn = true;
 
-	void FixedUpdate ()
-	{
-		HandleInput ();
-		UpdateCamera ();
+        rb = GetComponent<Rigidbody>();
+        gc = GameObject.FindGameObjectWithTag("GameController");
+        ResetPosition = gc.GetComponent<GameController>().LevelStart.transform.position + gc.GetComponent<GameController>().StartOffset;
 
-		if (DebugOn == true)
-		{
-			Debug.DrawRay (transform.position, Vector3.down * GroundProximityTolerence, Color.green);
-			Debug.DrawRay (transform.position, (transform.position - CameraRestingPos.transform.position)*-1, Color.yellow);
-		}
-	}
+        ResetRotation = Quaternion.identity; // because I'm lazy... eventually change this to the orientation of the start object
+    }
 
-	private bool CheckGrounded()
-	{
-		if (Physics.Raycast (transform.position, Vector3.down, GroundProximityTolerence))
-			return true;
-		else
-			return false;
-	}
+    void FixedUpdate()
+    {
+        HandleInput();
+        UpdateCamera();
 
-	private void HandleInput()
-	{
-		if (Input.GetKey (KeyCode.R))
-			ResetPlayer ();
+        if (DebugOn == true)
+        {
+            Debug.DrawRay(transform.position, Vector3.down * GroundProximityTolerence, Color.green);
+            Debug.DrawRay(transform.position, (transform.position - CameraRestingPos.transform.position) * -1, Color.yellow);
+        }
+    }
 
-		if (CheckGrounded() == true)
-			if (Input.GetKey (KeyCode.Space))
-				rb.AddForce (0, JumpForce, 0, ForceMode.Impulse);
+    private bool CheckGrounded()
+    {
+        if (Physics.Raycast(transform.position, Vector3.down, GroundProximityTolerence))
+            return true;
+        else
+            return false;
+    }
 
-		HorizontlComponent = (Input.GetAxis("Horizontal"));
-		VerticalComponent = (Input.GetAxis("Vertical"));
-		MovementVector = new Vector3 (HorizontlComponent, 0, VerticalComponent);
-		MovementVector = Quaternion.AngleAxis (OrbitAngle, Vector3.up) * MovementVector;
-		MovementVector.Normalize ();
+    private void HandleInput()
+    {
+        if (Input.GetKey(KeyCode.R))
+            ResetPlayer();
 
-		rb.AddForce (MovementVector, ForceMode.Impulse);
-		rb.AddForce (MovementVector*TweakValue, ForceMode.VelocityChange);
+        if (CheckGrounded() == true)
+            if (Input.GetKey(KeyCode.Space))
+                rb.AddForce(0, JumpForce, 0, ForceMode.Impulse);
 
-		OrbitAngle += (Input.GetAxis("Mouse X")*MouseSensitivity);
+        HorizontlComponent = (Input.GetAxis("Horizontal"));
+        VerticalComponent = (Input.GetAxis("Vertical"));
+        MovementVector = new Vector3(HorizontlComponent, 0, VerticalComponent);
+        MovementVector = Quaternion.AngleAxis(OrbitAngle, Vector3.up) * MovementVector;
+        // NEXT LINE IS NEW - BIT JANK
+        // MovementVector = Quaternion.AngleAxis(CamAngle, Vector3.right) * MovementVector;
+        MovementVector.Normalize();
 
-		if (Mathf.Abs (Input.GetAxis ("Mouse X")) > 0)
-			CameraCollision = false;
-	}
+        rb.AddForce(MovementVector, ForceMode.Impulse);
+        rb.AddForce(MovementVector * TweakValue, ForceMode.VelocityChange);
 
-	private void UpdateCamera ()
-	{
-		CamOrbit.transform.position = transform.position;
+        OrbitAngle += (Input.GetAxis("Mouse X") * MouseSensitivity);
 
-		if (CameraCollision == false)
-		{
-			MainCam.transform.position = transform.position + CamOffset;
-			MainCam.transform.eulerAngles = new Vector3 (CamAngle, 0, 0);
-			CamOrbit.transform.Rotate (0, OrbitAngle, 0);
-		}
+        // NEXT LINE ALLOWS LOOKING UP AND DOWN, BUT DOES NOT ROTATE CAMERA AROUND PLAYER. ALSO NEEDS CLAMP.
+        // CamAngle -= (Input.GetAxis("Mouse Y") * MouseSensitivity);
 
-		CheckCamCollision ();
-	}
+        if (Mathf.Abs(Input.GetAxis("Mouse X")) > 0)
+            CameraCollision = false;
+    }
 
-	private void CheckCamCollision()
-	{
-		Vector3 a = transform.position;
-		Vector3 b = (transform.position - CameraRestingPos.transform.position) * -1;
-		float l = Vector3.Magnitude (transform.position - CameraRestingPos.transform.position);
-		RaycastHit h;
-		Ray r = new Ray (a, b); 
-		if (Physics.Raycast (r, out h, l))
-			CameraRestingPos.transform.position = h.point;
-		else
-			CameraRestingPos.transform.position = CameraResetPosition.transform.position;
+    private void UpdateCamera()
+    {
+        CamOrbit.transform.position = transform.position;
 
-		CameraCollision = Physics.Raycast (r, l);
+        if (CameraCollision == false)
+        {
+            MainCam.transform.position = transform.position + CamOffset;
+            MainCam.transform.eulerAngles = new Vector3(CamAngle, 0, 0);
+            CamOrbit.transform.Rotate(0, OrbitAngle, 0);
+        }
 
-		MainCam.transform.position = CameraRestingPos.transform.position;
-	}
+        CheckCamCollision();
+    }
 
-	public void ResetPlayer()
-	{
-		rb.angularVelocity = Vector3.zero;
-		rb.velocity = Vector3.zero;
-		transform.position = ResetPosition; //gc.GetComponent<GameController> ().LevelStart.transform.position+gc.GetComponent<GameController> ().StartOffset;
+    private void CheckCamCollision()
+    {
+        Vector3 a = transform.position;
+        Vector3 b = (transform.position - CameraRestingPos.transform.position) * -1;
+        float l = Vector3.Magnitude(transform.position - CameraRestingPos.transform.position);
+        RaycastHit h;
+        Ray r = new Ray(a, b);
+        if (!useSeeThrough)
+        {
+            if (Physics.Raycast(r, out h, l))
+                CameraRestingPos.transform.position = h.point;
+            else
+                CameraRestingPos.transform.position = CameraResetPosition.transform.position;
 
-		//OrbitAngle = 0.0f;
-		//OrbitAngle = ResetRotation;
-	}
+            CameraCollision = Physics.Raycast(r, l);
+
+            MainCam.transform.position = CameraRestingPos.transform.position;
+        }
+        else
+        {
+            if (Physics.Raycast(r, out h, l))
+            {
+                previousMaterial = defaultMaterial;
+                if (h.transform.gameObject.GetComponent<Renderer>().sharedMaterial != hitMaterial)
+                {
+                    defaultMaterial = h.transform.gameObject.GetComponent<Renderer>().material;
+                }
+                if (h.transform.gameObject != objectHit && objectHit != null)
+                {
+                    objectHit.transform.gameObject.GetComponent<MeshRenderer>().material = previousMaterial;
+                }
+                objectHit = h.transform.gameObject;
+                objectHit.GetComponent<MeshRenderer>().material = hitMaterial;
+            }
+            else
+            {
+                if (objectHit != null)
+                {
+                    objectHit.transform.gameObject.GetComponent<MeshRenderer>().material = defaultMaterial;
+                }
+            }
+            CameraCollision = Physics.Raycast(r, l);
+        }
+
+    }
+
+    public void ResetPlayer()
+    {
+        rb.angularVelocity = Vector3.zero;
+        rb.velocity = Vector3.zero;
+        transform.position = ResetPosition; //gc.GetComponent<GameController> ().LevelStart.transform.position+gc.GetComponent<GameController> ().StartOffset;
+
+        //OrbitAngle = 0.0f;
+        //OrbitAngle = ResetRotation;
+    }
 }
