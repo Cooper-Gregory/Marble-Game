@@ -6,6 +6,7 @@ public class GameObjective : MonoBehaviour
 {
     public int objectiveID;
     public string objectiveName;
+    private string ogMessage;
     public bool objectiveActive;
     public bool objectiveCompleted;
     public int objectivePartsTotal;
@@ -24,12 +25,14 @@ public class GameObjective : MonoBehaviour
         {
             StartQuest();
         }
+        ogMessage = objectiveName;
     }
 
     public void StartQuest()
     {
         Debug.Log("Objective " + objectiveName + " started.");
         objectiveActive = true;
+        SetObjectiveString();
         objManager.GetComponent<ObjectiveTracker>().AddObjective(this);
         onObjectiveActivated.Raise(this, null);
     }
@@ -38,11 +41,24 @@ public class GameObjective : MonoBehaviour
     public void AddQuestStep()
     {
         objectiveStep++;
+        SetObjectiveString(); // might not update UI (why would it?)
+        objManager.GetComponent<ObjectiveTracker>().RemoveObj(objectiveID);
+        objManager.GetComponent<ObjectiveTracker>().AddObjective(this);
+
         if (objectiveStep == objectivePartsTotal)
         {
             objectiveCompleted = true;
             objManager.GetComponent<ObjectiveTracker>().RemoveObj(objectiveID);
             Debug.Log("Objective " + objectiveName + " complete.");
         }
+    }
+
+    public void SetObjectiveString()
+    {
+        if (objectivePartsTotal > 1)
+        {
+            objectiveName = ogMessage + objectiveStep + " of " + objectivePartsTotal;
+        }
+
     }
 }

@@ -22,7 +22,7 @@ public class ObjectiveTracker : MonoBehaviour
             }
         }
 
-        objCanvas.enabled = false;
+        objCanvas.enabled = true;
     }
 
     // Update is called once per frame
