@@ -1,14 +1,15 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class Player : MonoBehaviour {
+public class Player : MonoBehaviour
+{
 
     public bool DebugOn;
 
     public float GroundProximityTolerence;
     public float TestRadius;
 
-    public float RollForce;
+    //public float RollForce;
     public float JumpForce;
     public float TweakValue;
 
@@ -22,7 +23,7 @@ public class Player : MonoBehaviour {
     public float MouseSensitivity;
 
     private Rigidbody rb;
-    private bool grounded;
+    public bool canAirControl;
     private float HorizontlComponent;
     private float VerticalComponent;
     private Vector3 MovementVector;
@@ -38,6 +39,12 @@ public class Player : MonoBehaviour {
     public Material defaultMaterial;
     public Material hitMaterial;
     public Material previousMaterial;
+    //
+    public float horizontalSpeed = 2.0f; // speed of horizontal rotation
+    public float verticalSpeed = 2.0f; // speed of vertical rotation
+    public float distance = 10.0f; // distance between camera and player
+
+    //
 
     [HideInInspector] public Vector3 ResetPosition;
     [HideInInspector] public Quaternion ResetRotation; // not actually used yet
@@ -53,7 +60,7 @@ public class Player : MonoBehaviour {
         ResetRotation = Quaternion.identity; // because I'm lazy... eventually change this to the orientation of the start object
     }
 
-    void FixedUpdate()
+    void LateUpdate() // Was FixedUpdate
     {
         HandleInput();
         UpdateCamera();
@@ -79,25 +86,34 @@ public class Player : MonoBehaviour {
             ResetPlayer();
 
         if (CheckGrounded() == true)
+        {
+            if (!canAirControl)
+            {
+                HorizontlComponent = (Input.GetAxis("Horizontal"));
+                VerticalComponent = (Input.GetAxis("Vertical"));
+            }
+
             if (Input.GetKey(KeyCode.Space))
                 rb.AddForce(0, JumpForce, 0, ForceMode.Impulse);
+        }
 
-        HorizontlComponent = (Input.GetAxis("Horizontal"));
-        VerticalComponent = (Input.GetAxis("Vertical"));
+        if (canAirControl)
+        {
+            HorizontlComponent = (Input.GetAxis("Horizontal"));
+            VerticalComponent = (Input.GetAxis("Vertical"));
+        }
+
         MovementVector = new Vector3(HorizontlComponent, 0, VerticalComponent);
+
         MovementVector = Quaternion.AngleAxis(OrbitAngle, Vector3.up) * MovementVector;
-        // NEXT LINE IS NEW - BIT JANK
-        // MovementVector = Quaternion.AngleAxis(CamAngle, Vector3.right) * MovementVector;
         MovementVector.Normalize();
 
         rb.AddForce(MovementVector, ForceMode.Impulse);
         rb.AddForce(MovementVector * TweakValue, ForceMode.VelocityChange);
 
         OrbitAngle += (Input.GetAxis("Mouse X") * MouseSensitivity);
-
-        // NEXT LINE ALLOWS LOOKING UP AND DOWN, BUT DOES NOT ROTATE CAMERA AROUND PLAYER. ALSO NEEDS CLAMP.
-        // CamAngle -= (Input.GetAxis("Mouse Y") * MouseSensitivity);
-
+        CamAngle -= (Input.GetAxis("Mouse Y") * MouseSensitivity);
+        CamAngle = Mathf.Clamp(CamAngle, -90, 90); // CHANGE THE VALUES OF -90 AND 90 TO ADJUST VERTICAL MOUSE CLAMPING
         if (Mathf.Abs(Input.GetAxis("Mouse X")) > 0)
             CameraCollision = false;
     }
@@ -108,9 +124,9 @@ public class Player : MonoBehaviour {
 
         if (CameraCollision == false)
         {
-            MainCam.transform.position = transform.position + CamOffset;
-            MainCam.transform.eulerAngles = new Vector3(CamAngle, 0, 0);
-            CamOrbit.transform.Rotate(0, OrbitAngle, 0);
+            Quaternion rotation = Quaternion.Euler(CamAngle, OrbitAngle, 0);
+            MainCam.transform.position = transform.position - rotation * Vector3.forward * distance;
+            MainCam.transform.rotation = rotation;
         }
 
         CheckCamCollision();
@@ -168,7 +184,8 @@ public class Player : MonoBehaviour {
         rb.velocity = Vector3.zero;
         transform.position = ResetPosition; //gc.GetComponent<GameController> ().LevelStart.transform.position+gc.GetComponent<GameController> ().StartOffset;
 
-        //OrbitAngle = 0.0f;
-        //OrbitAngle = ResetRotation;
+
     }
+
 }
+
