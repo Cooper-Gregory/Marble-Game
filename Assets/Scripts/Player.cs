@@ -42,7 +42,11 @@ public class Player : MonoBehaviour {
 	[HideInInspector] public Vector3 ResetPosition;
 	[HideInInspector] public Quaternion ResetRotation; // not actually used yet
 
-	void Start ()
+	public AudioSource rollingBall;
+    public bool playingSound = false;
+
+
+    void Start ()
 	{
 		DebugOn = true;
 
@@ -62,6 +66,29 @@ public class Player : MonoBehaviour {
 		{
 			Debug.DrawRay (transform.position, Vector3.down * GroundProximityTolerence, Color.green);
 			Debug.DrawRay (transform.position, (transform.position - CameraRestingPos.transform.position)*-1, Color.yellow);
+		}
+	}
+	private void Update()
+	{
+		StartCoroutine(RollSound());
+		Debug.LogWarning("The ball is rolling");
+	}
+
+
+	private IEnumerator RollSound()
+	{
+		if(CheckGrounded() && playingSound == false)
+		{
+			playingSound = true;
+			rollingBall.Play();
+			yield return new WaitForSeconds(5f);
+			playingSound = false;
+			StopAllCoroutines();
+		}
+
+		if(CheckGrounded() == false && playingSound)
+		{
+			rollingBall.Stop();
 		}
 	}
 
