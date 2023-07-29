@@ -9,16 +9,21 @@ public class PlayScript : MonoBehaviour
 {
 
     public Button playButton;
+    public Button menuButton;
 
     void Start()
     {
-        Button btn = playButton.GetComponent<Button>();
-        btn.onClick.AddListener(LoadNextScene);
-
+        playButton.onClick.AddListener(LoadGameScene);
+        menuButton.onClick.AddListener(LoadMenuScene);
     }
 
-    void LoadNextScene()
+    void LoadGameScene()
     {
         SceneManager.LoadScene("Alley");
+    }
+
+    void LoadMenuScene()
+    {
+        SceneManager.LoadScene("AlleyLoadingScreen");
     }
 }

@@ -22,7 +22,7 @@ public class Player : MonoBehaviour {
 	public float MouseSensitivity;
 
 	private Rigidbody rb;
-	private bool grounded;
+	public bool grounded;
 	private float HorizontlComponent;
 	private float VerticalComponent;
 	private Vector3 MovementVector;
@@ -77,27 +77,34 @@ public class Player : MonoBehaviour {
 
 	private IEnumerator RollSound()
 	{
-		if(CheckGrounded() && playingSound == false)
+        
+		if (grounded && playingSound == false)
 		{
 			playingSound = true;
 			rollingBall.Play();
 			yield return new WaitForSeconds(5f);
 			playingSound = false;
-			StopAllCoroutines();
+			//StopAllCoroutines();
 		}
-
-		if(CheckGrounded() == false && playingSound)
+		else
 		{
 			rollingBall.Stop();
 		}
+		
 	}
 
 	private bool CheckGrounded()
 	{
 		if (Physics.Raycast (transform.position, Vector3.down, GroundProximityTolerence))
+        {
+			grounded = true;
 			return true;
-		else
+		}
+        else
+        {
+			grounded = false;
 			return false;
+		}
 	}
 
 	private void HandleInput()
