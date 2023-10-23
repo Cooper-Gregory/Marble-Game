@@ -9,12 +9,12 @@ public class PlayScript : MonoBehaviour
 {
 
     public Button playButton;
-    public Button menuButton;
+
 
     void Start()
     {
         playButton.onClick.AddListener(LoadGameScene);
-        menuButton.onClick.AddListener(LoadMenuScene);
+
     }
 
     void LoadGameScene()
@@ -22,8 +22,5 @@ public class PlayScript : MonoBehaviour
         SceneManager.LoadScene("Alley");
     }
 
-    void LoadMenuScene()
-    {
-        SceneManager.LoadScene("AlleyLoadingScreen");
-    }
+
 }
