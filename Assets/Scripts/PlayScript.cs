@@ -8,16 +8,7 @@ using UnityEngine.UI;
 public class PlayScript : MonoBehaviour
 {
 
-    public Button playButton;
-
-
-    void Start()
-    {
-        playButton.onClick.AddListener(LoadGameScene);
-
-    }
-
-    void LoadGameScene()
+    public void LoadGameScene()
     {
         SceneManager.LoadScene("Alley");
     }
